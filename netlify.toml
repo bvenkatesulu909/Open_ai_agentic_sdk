@@ -1,0 +1,15 @@
+# netlify.toml — serves the static UI from the repo's /static folder.
+# No build step: it's plain HTML/CSS/JS.
+# After deploy, set the backend URL by editing static/backend.js
+# (window.BACKEND_URL = "https://your-render-url.onrender.com")
+# OR trigger a redeploy. The UI defaults to same-origin when empty.
+
+[build]
+  publish = "static"
+  command = "echo 'static site — no build step'"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"

@@ -1,0 +1,23 @@
+# render.yaml — deploys the FastAPI backend.
+# Set these as Render environment variables (not committed):
+#   OPENROUTER_API_KEY  (from https://openrouter.ai/keys)
+#   ALLOW_ORIGINS       (your Netlify URL, e.g. https://open-ai-agentic-sdk.netlify.app)
+#   DEFAULT_MODEL, FALLBACK_MODELS (optional overrides)
+
+services:
+  - type: web
+    name: open-ai-agentic-sdk
+    runtime: python
+    plan: free
+    region: oregon
+    pythonVersion: "3.12"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn server:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHONPATH
+        value: ""
+      - key: OPENROUTER_API_KEY
+        sync: false          # you paste this in Render dashboard
+      - key: ALLOW_ORIGINS
+        sync: false          # set to your Netlify URL

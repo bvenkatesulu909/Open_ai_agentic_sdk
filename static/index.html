@@ -67,8 +67,11 @@
   </div>
 </div>
 
+<script src="backend.js"></script>
 <script>
 const DEFAULT_PROMPT = document.getElementById('prompt').value;
+// BACKEND_URL: same-origin locally; set to the Render URL on Netlify (backend.js).
+const BACKEND_URL = window.BACKEND_URL || "";
 
 async function runAll(prompt) {
   // Kick off all three in parallel; render each as it resolves.
@@ -81,7 +84,7 @@ async function runAll(prompt) {
     document.getElementById(sId).className='status';
     document.getElementById(sId).textContent='running…';
     document.getElementById(oId).innerHTML='<span class="spinner">calling model…</span>';
-    fetch(`/api/run?pattern=${p}&prompt=`+encodeURIComponent(prompt))
+    fetch(`${BACKEND_URL}/api/run?pattern=${p}&prompt=`+encodeURIComponent(prompt))
       .then(r=>r.json())
       .then(d=>{
         const s=document.getElementById(sId), o=document.getElementById(oId);

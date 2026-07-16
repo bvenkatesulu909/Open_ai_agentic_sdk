@@ -9,6 +9,7 @@ to click (a "Run again" button is optional, not required).
 from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 import os
 
 from runner import run_all, run_pattern
@@ -19,6 +20,17 @@ app = FastAPI(
     docs_url=None,        # disable auto-Swagger so our /docs = build docs page
     redoc_url=None,
     openapi_url=None,
+)
+
+# Allow the Netlify frontend (and local dev) to call this backend.
+# Set ALLOW_ORIGINS to the Netlify URL in Render env (comma-separated).
+_ALLOWED = os.getenv("ALLOW_ORIGINS", "*").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_ALLOWED,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 BASE = os.path.dirname(os.path.abspath(__file__))
