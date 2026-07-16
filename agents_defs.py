@@ -15,6 +15,7 @@ can inject DEFAULT_MODEL or a fallback per call. Here we leave model unset
 and let the runner bind it.
 """
 import functools
+import asyncio
 from agents import Agent, handoff, set_tracing_disabled, function_tool, Runner, RunConfig
 from agents.exceptions import AgentsException
 
@@ -33,10 +34,19 @@ def make_agent_tool(worker: Agent, tool_name: str, tool_description: str):
     @function_tool(name_override=tool_name, description_override=tool_description)
     async def _run(input: str) -> str:
         # Run the worker as a nested agent, using the OpenRouter provider.
-        result = await Runner.run(
-            worker, input, run_config=RunConfig(model_provider=provider)
-        )
-        return result.final_output
+        # Retry on transient API errors so a flaky sub-call never breaks the
+        # whole run; on hard failure return a clear message, not an exception.
+        last_err = None
+        for attempt in range(3):
+            try:
+                result = await Runner.run(
+                    worker, input, run_config=RunConfig(model_provider=provider)
+                )
+                return result.final_output
+            except Exception as e:  # transient 5xx / 429 / network blip
+                last_err = e
+                await asyncio.sleep(1.0 * (attempt + 1))
+        return f"[{tool_name} unavailable: {type(last_err).__name__}]"
     return _run
 
 
@@ -127,10 +137,15 @@ reviewer_tool = make_agent_tool(
 manager_agent = Agent(
     name="ManagerAgent",
     instructions=(
-        "You are a content manager. Given a topic, you MUST: "
-        "1) call research_topic, 2) call write_summary with the research, "
-        "3) call review_draft with the summary. Then output the final polished "
-        "summary followed by the reviewer's note. Use the tools in order."
+        "You are a content manager. You have EXACTLY three tools and MUST use "
+        "them in this strict order, each time feeding the previous tool's output "
+        "into the next:\n"
+        "STEP 1 — call research_topic with the user's topic. Wait for its bullet points.\n"
+        "STEP 2 — call write_summary with the RESEARCH BULLETS from step 1. Wait for the draft.\n"
+        "STEP 3 — call review_draft with the DRAFT from step 2. Wait for the critique.\n"
+        "Finally, output: (a) the final polished summary, then (b) the reviewer's note "
+        "verbatim. NEVER answer from your own knowledge — only use tool outputs. "
+        "If a tool returns '[... unavailable ...]', say so explicitly and stop."
     ),
     tools=[research_tool, writer_tool, reviewer_tool],
 )
