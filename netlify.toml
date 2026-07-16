@@ -1,15 +1,24 @@
-# netlify.toml — serves the static UI from the repo's /static folder.
-# No build step: it's plain HTML/CSS/JS.
-# After deploy, set the backend URL by editing static/backend.js
-# (window.BACKEND_URL = "https://your-render-url.onrender.com")
-# OR trigger a redeploy. The UI defaults to same-origin when empty.
+# netlify.toml — static UI + serverless Python function backend.
+# The function (netlify/functions/api.py) serves /api/run and /api/health,
+# so the UI calls same-origin and backend.js stays empty (window.BACKEND_URL="").
+# Set OPENROUTER_API_KEY in Netlify site env vars (not committed).
 
 [build]
   publish = "static"
   command = "echo 'static site — no build step'"
+
+# Route all /api/* requests to the serverless function.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
 
 [[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"

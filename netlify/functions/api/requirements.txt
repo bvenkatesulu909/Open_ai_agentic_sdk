@@ -1,0 +1,10 @@
+openai-agents
+pydantic>=2.12.2
+httpx<1,>=0.23.0
+anyio<5,>=3.5.0
+typing_extensions
+mcp>=1.19.0
+requests
+python-dotenv
+fastapi
+uvicorn
