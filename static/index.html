@@ -81,6 +81,12 @@ async function runAll(prompt) {
     ['agents_as_tools','o-agents_as_tools','s-agents_as_tools'],
   ];
   patterns.forEach(([p,oId,sId])=>{
+    if(!BACKEND_URL){
+      document.getElementById(sId).className='status bad';
+      document.getElementById(sId).textContent='⚠ backend not set';
+      document.getElementById(oId).textContent='Configure window.BACKEND_URL in backend.js → point at your API backend, then redeploy.';
+      return;
+    }
     document.getElementById(sId).className='status';
     document.getElementById(sId).textContent='running…';
     document.getElementById(oId).innerHTML='<span class="spinner">calling model…</span>';
@@ -115,7 +121,12 @@ window.addEventListener('DOMContentLoaded', ()=>{
     b.style.cssText='background:#3a2d00;color:#ffd166;border:1px solid #665200;padding:10px 14px;border-radius:8px;margin-bottom:18px;font-size:13px;';
     b.innerHTML='⚠ <b>No backend configured.</b> This UI is deployed statically. Set <code>window.BACKEND_URL</code> in backend.js to your running API backend (e.g. Render) so the agents can run. See <a href="/docs.html" style="color:#58a6ff">docs</a>.';
     document.querySelector('.wrap').prepend(b);
-    // Don't auto-run (would fail); show the note instead.
+    // Show a clean message in each card instead of a failed fetch.
+    ['handoffs','manager_workers','agents_as_tools'].forEach(p=>{
+      document.getElementById('s-'+p).className='status bad';
+      document.getElementById('s-'+p).textContent='⚠ backend not set';
+      document.getElementById('o-'+p).textContent='Configure window.BACKEND_URL in backend.js → point at your API backend, then redeploy.';
+    });
   } else {
     runAll(DEFAULT_PROMPT);
   }
