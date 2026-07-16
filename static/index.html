@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenAI Agents SDK — Multi-Agent Demo</title>
+<style>
+  :root { --bg:#0d1117; --card:#161b22; --border:#30363d; --fg:#e6edf3;
+          --muted:#8b949e; --accent:#58a6ff; --ok:#3fb950; --bad:#f85149; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font:15px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
+  header { padding:24px 28px; border-bottom:1px solid var(--border); }
+  h1 { margin:0 0 4px; font-size:20px; }
+  .sub { color:var(--muted); font-size:13px; }
+  .wrap { max-width:1100px; margin:0 auto; padding:24px 28px 64px; }
+  .prompt { display:flex; gap:10px; margin:18px 0 26px; }
+  .prompt input { flex:1; background:var(--card); border:1px solid var(--border);
+                  color:var(--fg); padding:11px 13px; border-radius:8px; font-size:14px; }
+  .prompt button { background:var(--accent); border:0; color:#04101f; font-weight:600;
+                   padding:11px 18px; border-radius:8px; cursor:pointer; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+  @media (max-width:900px){ .grid{ grid-template-columns:1fr; } }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px;
+          padding:18px; min-height:200px; }
+  .card h2 { margin:0 0 2px; font-size:15px; }
+  .tag { display:inline-block; font-size:11px; color:var(--muted);
+         border:1px solid var(--border); border-radius:999px; padding:2px 9px; margin-bottom:12px; }
+  .status { font-size:12px; margin-bottom:10px; }
+  .status.ok { color:var(--ok); } .status.bad { color:var(--bad); }
+  .out { white-space:pre-wrap; font-size:13.5px; color:#c9d1d9; }
+  .meta { font-size:11px; color:var(--muted); margin-top:10px; }
+  .spinner { color:var(--muted); font-style:italic; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>OpenAI Agents SDK — Multi-Agent Demo</h1>
+  <div class="sub">Handoffs · Manager+Workers · Agents-as-Tools &nbsp;|&nbsp;
+       <a href="/docs">build docs</a> · <a href="/api/health">health</a></div>
+</header>
+<div class="wrap">
+  <div class="prompt">
+    <input id="prompt" value="My payment failed and I was double-charged. Also, how do I reset my API key? And what plan fits a 5-person team on a budget?" />
+    <button id="run">Run</button>
+  </div>
+  <div class="grid" id="grid">
+    <div class="card">
+      <h2>1 · Handoffs</h2>
+      <span class="tag">triage → specialist</span>
+      <div class="status" id="s-handoffs">waiting…</div>
+      <div class="out" id="o-handoffs"><span class="spinner">idle</span></div>
+    </div>
+    <div class="card">
+      <h2>2 · Manager + Workers</h2>
+      <span class="tag">orchestrator delegates</span>
+      <div class="status" id="s-manager_workers">waiting…</div>
+      <div class="out" id="o-manager_workers"><span class="spinner">idle</span></div>
+    </div>
+    <div class="card">
+      <h2>3 · Agents-as-Tools</h2>
+      <span class="tag">translate + sentiment</span>
+      <div class="status" id="s-agents_as_tools">waiting…</div>
+      <div class="out" id="o-agents_as_tools"><span class="spinner">idle</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULT_PROMPT = document.getElementById('prompt').value;
+
+async function runAll(prompt) {
+  // Kick off all three in parallel; render each as it resolves.
+  const patterns = [
+    ['handoffs','o-handoffs','s-handoffs'],
+    ['manager_workers','o-manager_workers','s-manager_workers'],
+    ['agents_as_tools','o-agents_as_tools','s-agents_as_tools'],
+  ];
+  patterns.forEach(([p,oId,sId])=>{
+    document.getElementById(sId).className='status';
+    document.getElementById(sId).textContent='running…';
+    document.getElementById(oId).innerHTML='<span class="spinner">calling model…</span>';
+    fetch(`/api/run?pattern=${p}&prompt=`+encodeURIComponent(prompt))
+      .then(r=>r.json())
+      .then(d=>{
+        const s=document.getElementById(sId), o=document.getElementById(oId);
+        if(d.ok){
+          s.className='status ok'; s.textContent='✓ done · model: '+d.model_used;
+          o.textContent=d.output;
+        } else {
+          s.className='status bad'; s.textContent='✗ failed';
+          o.textContent=d.error || 'unknown error';
+        }
+      })
+      .catch(e=>{
+        document.getElementById(sId).className='status bad';
+        document.getElementById(sId).textContent='✗ network error';
+        document.getElementById(oId).textContent=String(e);
+      });
+  });
+}
+
+document.getElementById('run').onclick=()=>runAll(document.getElementById('prompt').value);
+// AUTO-RUN on page load (hands-free, per requirement)
+window.addEventListener('DOMContentLoaded', ()=>runAll(DEFAULT_PROMPT));
+</script>
+</body>
+</html>
