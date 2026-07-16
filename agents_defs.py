@@ -16,7 +16,7 @@ and let the runner bind it.
 """
 import functools
 import asyncio
-from agents import Agent, handoff, set_tracing_disabled, function_tool, Runner, RunConfig
+from agents import Agent, handoff, set_tracing_disabled, function_tool, Runner, RunConfig, ModelSettings
 from agents.exceptions import AgentsException
 
 set_tracing_disabled(disabled=True)  # keep demo output clean; no trace export
@@ -82,13 +82,16 @@ sales_agent = Agent(
 triage_agent = Agent(
     name="TriageAgent",
     instructions=(
-        "You are a support triage agent. Read the user message and route it to "
-        "exactly ONE specialist using the available handoff tools: "
-        "BillingSpecialist for billing/refunds/payments, "
-        "TechnicalSpecialist for bugs/login/API/technical, "
-        "SalesSpecialist for pricing/plans/sales questions. "
-        "Do not answer the question yourself — hand off and stop."
+        "You are a support triage router. You MUST NOT answer any question "
+        "yourself. Your ONLY job is to decide which ONE specialist handles the "
+        "user's message and immediately call that handoff tool:\n"
+        "  - route_to_billing  : refunds, invoices, double-charges, payments, subscriptions\n"
+        "  - route_to_technical: login, API errors, integrations, bugs, troubleshooting\n"
+        "  - route_to_sales    : pricing, plans, feature fit, 'which plan' questions\n"
+        "Call exactly one handoff tool and STOP. Never write a reply. If unsure, "
+        "prefer route_to_sales for plan questions and route_to_technical for errors."
     ),
+    model_settings=ModelSettings(tool_choice="required"),
     handoffs=[
         handoff(billing_agent, tool_name_override="route_to_billing"),
         handoff(technical_agent, tool_name_override="route_to_technical"),
@@ -137,15 +140,15 @@ reviewer_tool = make_agent_tool(
 manager_agent = Agent(
     name="ManagerAgent",
     instructions=(
-        "You are a content manager. You have EXACTLY three tools and MUST use "
-        "them in this strict order, each time feeding the previous tool's output "
-        "into the next:\n"
-        "STEP 1 — call research_topic with the user's topic. Wait for its bullet points.\n"
-        "STEP 2 — call write_summary with the RESEARCH BULLETS from step 1. Wait for the draft.\n"
-        "STEP 3 — call review_draft with the DRAFT from step 2. Wait for the critique.\n"
-        "Finally, output: (a) the final polished summary, then (b) the reviewer's note "
-        "verbatim. NEVER answer from your own knowledge — only use tool outputs. "
-        "If a tool returns '[... unavailable ...]', say so explicitly and stop."
+        "You are a content manager. You have EXACTLY three tools and MUST invoke "
+        "each ONE TIME, in this strict order, never repeating a tool:\n"
+        "STEP 1 — call research_topic ONCE with the FULL combined topic (if the user "
+        "gave multiple sub-questions, merge them into a single research query).\n"
+        "STEP 2 — call write_summary ONCE, passing the research bullets from step 1.\n"
+        "STEP 3 — call review_draft ONCE, passing the draft from step 2.\n"
+        "Then output: (a) the final polished summary, (b) the reviewer's note verbatim. "
+        "NEVER answer from your own knowledge and NEVER call the same tool twice. "
+        "If a tool returns '[... unavailable ...]', state that and stop."
     ),
     tools=[research_tool, writer_tool, reviewer_tool],
 )

@@ -50,7 +50,7 @@ async def run_pattern(pattern: str, user_input: str) -> dict:
             result = await Runner.run(
                 starting_agent=AGENT_REGISTRY[pattern],
                 input=user_input,
-                max_turns=12,
+                max_turns=6,
                 run_config=RunConfig(model_provider=provider),
             )
             return {
