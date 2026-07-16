@@ -15,7 +15,7 @@ can inject DEFAULT_MODEL or a fallback per call. Here we leave model unset
 and let the runner bind it.
 """
 import functools
-from agents import Agent, handoff, set_tracing_disabled, function_tool, Runner
+from agents import Agent, handoff, set_tracing_disabled, function_tool, Runner, RunConfig
 from agents.exceptions import AgentsException
 
 set_tracing_disabled(disabled=True)  # keep demo output clean; no trace export
@@ -26,11 +26,16 @@ set_tracing_disabled(disabled=True)  # keep demo output clean; no trace export
 # This is the version-proof "agent as tool" — works on every SDK release.
 # ---------------------------------------------------------------------------
 def make_agent_tool(worker: Agent, tool_name: str, tool_description: str):
+    # Pull the provider once at import so nested Runner.run uses OpenRouter.
+    from config import get_provider
+    provider = get_provider()
+
     @function_tool(name_override=tool_name, description_override=tool_description)
     async def _run(input: str) -> str:
-        # Run the worker as a nested agent. The runner's model_provider +
-        # the worker's own `model` (bound by runner.py) drive the call.
-        result = await Runner.run(worker, input)
+        # Run the worker as a nested agent, using the OpenRouter provider.
+        result = await Runner.run(
+            worker, input, run_config=RunConfig(model_provider=provider)
+        )
         return result.final_output
     return _run
 

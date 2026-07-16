@@ -12,7 +12,7 @@ agent objects -> model name and patching each one in place (agents are
 lightweight; we patch the live object, which is safe within a single run).
 """
 import asyncio
-from agents import Runner
+from agents import Runner, RunConfig
 from config import get_provider, DEFAULT_MODEL, FALLBACK_MODELS
 from agents_defs import AGENT_REGISTRY
 
@@ -25,17 +25,13 @@ from agents_defs import (
 
 
 def _collect_agents(pattern: str):
-    """Return the set of agent objects used by a pattern (top + nested)."""
+    """Return the list of agent objects used by a pattern (top + nested)."""
     top = AGENT_REGISTRY[pattern]
-    agents = {top}
-    for t in getattr(top, "tools", []) or []:
-        fn = getattr(t, "on_invoke_tool", None)
-        # function_tool closures capture the worker; we instead keep an
-        # explicit registry of workers per pattern below.
+    agents = [top]
     if pattern == "manager_workers":
-        agents.update({research_worker, writer_worker, reviewer_worker})
+        agents.extend([research_worker, writer_worker, reviewer_worker])
     elif pattern == "agents_as_tools":
-        agents.update({translator_agent, sentiment_agent})
+        agents.extend([translator_agent, sentiment_agent])
     return agents
 
 
@@ -55,7 +51,7 @@ async def run_pattern(pattern: str, user_input: str) -> dict:
                 starting_agent=AGENT_REGISTRY[pattern],
                 input=user_input,
                 max_turns=12,
-                model_provider=provider,
+                run_config=RunConfig(model_provider=provider),
             )
             return {
                 "pattern": pattern,
