@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ShopSense</title>
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --panel: #121829;
+    --panel-2: #18203a;
+    --text: #e8ecf5;
+    --muted: #8a93a8;
+    --accent: #38bdf8;
+    --accent-2: #2dd4bf;
+    --green: #22c55e;
+    --border: #232c44;
+    --danger: #f87171;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+  }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 28px; border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 20px; }
+  .logo {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: var(--accent); display: grid; place-items: center;
+    color: #04121f; font-weight: 800; font-size: 20px;
+  }
+  nav { display: flex; gap: 12px; align-items: center; }
+  .pill {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+    padding: 8px 16px; border-radius: 999px; font-size: 14px; cursor: pointer;
+  }
+  .pill.cart { background: var(--accent-2); color: #04201c; border: none; font-weight: 600; }
+  .badge {
+    background: var(--green); color: #04240f; border-radius: 999px;
+    width: 20px; height: 20px; display: inline-grid; place-items: center;
+    font-size: 12px; font-weight: 700; margin-left: 8px;
+  }
+  main { max-width: 1100px; margin: 0 auto; padding: 48px 28px 120px; }
+  h1 { font-size: 44px; line-height: 1.1; margin: 0 0 16px; letter-spacing: -0.5px; }
+  .sub { color: var(--muted); font-size: 17px; max-width: 640px; line-height: 1.6; margin: 0 0 24px; }
+  .filter { background: transparent; color: var(--text); border: 1px solid var(--border);
+    padding: 8px 18px; border-radius: 999px; font-size: 14px; cursor: pointer; margin-bottom: 24px; }
+  .status { color: var(--muted); font-size: 14px; margin: 8px 0 18px; }
+  .status.error { color: var(--danger); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .card h3 { margin: 0; font-size: 16px; }
+  .card .cat { color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; }
+  .card .desc { color: var(--muted); font-size: 13px; line-height: 1.5; flex: 1; }
+  .card .row { display: flex; align-items: center; justify-content: space-between; }
+  .price { font-weight: 700; font-size: 16px; }
+  .rating { color: #fbbf24; font-size: 13px; }
+  .add { background: var(--accent); color: #04121f; border: none; border-radius: 8px;
+    padding: 7px 12px; font-weight: 600; cursor: pointer; font-size: 13px; }
+  /* Chat widget */
+  .chat-fab {
+    position: fixed; right: 22px; bottom: 22px; display: flex; align-items: center; gap: 10px;
+  }
+  .chat-label {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+    padding: 10px 16px; border-radius: 999px; font-size: 14px; display: flex; align-items: center; gap: 8px;
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); }
+  .chat-btn {
+    width: 54px; height: 54px; border-radius: 50%; background: var(--accent-2);
+    border: none; display: grid; place-items: center; cursor: pointer; color: #04201c;
+  }
+  .chat-panel {
+    position: fixed; right: 22px; bottom: 90px; width: 360px; max-height: 60vh;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+    display: none; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  }
+  .chat-panel.open { display: flex; }
+  .chat-head { padding: 14px 16px; border-bottom: 1px solid var(--border); font-weight: 700; }
+  .chat-body { padding: 14px 16px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+  .msg { padding: 9px 12px; border-radius: 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+  .msg.user { background: var(--accent); color: #04121f; align-self: flex-end; }
+  .msg.bot { background: var(--panel-2); align-self: flex-start; }
+  .chat-input { display: flex; border-top: 1px solid var(--border); }
+  .chat-input input { flex: 1; background: transparent; border: none; color: var(--text); padding: 14px 16px; font-size: 14px; outline: none; }
+  .chat-input button { background: var(--accent-2); border: none; color: #04201c; padding: 0 18px; font-weight: 700; cursor: pointer; }
+  footer { text-align: center; color: #5b647e; font-size: 12px; padding: 24px; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand"><div class="logo">S</div>ShopSense</div>
+    <nav>
+      <button class="pill" onclick="alert('Orders view — demo')">My Orders</button>
+      <button class="pill cart" id="cartBtn">Cart<span class="badge" id="cartBadge">0</span></button>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Your store, with an AI brain</h1>
+    <p class="sub">Ask the assistant to find products, get recommendations under your budget, check an order, or manage your cart. The page loads live catalog data automatically.</p>
+    <button class="filter" id="filterBtn">All</button>
+    <div class="status" id="status">Loading products…</div>
+    <div class="grid" id="grid"></div>
+  </main>
+
+  <footer>Consumer multi-agent demo · SQLite + FastAPI + OpenAI Agents SDK</footer>
+
+  <div class="chat-panel" id="chatPanel">
+    <div class="chat-head">ShopSense Assistant</div>
+    <div class="chat-body" id="chatBody"></div>
+    <div class="chat-input">
+      <input id="chatInput" placeholder="Ask for a budget pick…" onkeydown="if(event.key==='Enter')sendChat()" />
+      <button onclick="sendChat()">Send</button>
+    </div>
+  </div>
+
+  <div class="chat-fab">
+    <div class="chat-label"><span class="dot"></span>ShopSense Assistant</div>
+    <button class="chat-btn" onclick="toggleChat()" aria-label="Open chat">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2z"/></svg>
+    </button>
+  </div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+async function loadProducts() {
+  const status = $("status");
+  try {
+    const res = await fetch("/api/products");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const grid = $("grid");
+    grid.innerHTML = "";
+    if (!data.products.length) {
+      status.textContent = "No products found.";
+      return;
+    }
+    for (const p of data.products) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="cat">${p.category}</div>
+        <h3>${p.name}</h3>
+        <div class="desc">${p.description}</div>
+        <div class="row">
+          <span class="price">$${p.price.toFixed(2)}</span>
+          <span class="rating">★ ${p.rating}</span>
+        </div>
+        <div class="row">
+          <span class="rating">${p.stock} in stock</span>
+          <button class="add" onclick="addToCart(${p.id})">Add</button>
+        </div>`;
+      grid.appendChild(card);
+    }
+    status.textContent = data.count + " products loaded.";
+    status.classList.remove("error");
+  } catch (e) {
+    status.textContent = "Failed to load products: " + e.message;
+    status.classList.add("error");
+  }
+}
+
+async function addToCart(id) {
+  try {
+    const res = await fetch("/api/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ product_id: id, qty: 1 }),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const cart = await res.json();
+    $("cartBadge").textContent = cart.items.reduce((s, i) => s + i.qty, 0);
+  } catch (e) {
+    alert("Cart error: " + e.message);
+  }
+}
+
+function toggleChat() { $("chatPanel").classList.toggle("open"); }
+
+function appendMsg(who, text) {
+  const body = $("chatBody");
+  const div = document.createElement("div");
+  div.className = "msg " + who;
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+async function sendChat() {
+  const input = $("chatInput");
+  const text = input.value.trim();
+  if (!text) return;
+  appendMsg("user", text);
+  input.value = "";
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text }),
+    });
+    const data = await res.json();
+    appendMsg("bot", data.reply);
+  } catch (e) {
+    appendMsg("bot", "Error: " + e.message);
+  }
+}
+
+// HANDS-FREE: load catalog the moment the page opens. No button needed.
+window.addEventListener("DOMContentLoaded", loadProducts);
+</script>
+</body>
+</html>

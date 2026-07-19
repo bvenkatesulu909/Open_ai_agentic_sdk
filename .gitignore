@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+shop.db
+.env
+.venv/
+uv.lock
